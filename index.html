@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual Control Light Intensity</h1>
+    <button onclick="sendCommand('0')">Phase Min</button>
+    <button onclick="sendCommand('1')">Phase Moy</button>
+    <button onclick="sendCommand('2')">Phase Max</button>
+    <h2>Current Phase: <span id="currentPhase">-</span></h2>
+    <br>
+    <h3>This web interface allows manual control for 10 seconds, after which the light intensity control returns to automatic mode.</h3>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        const brokerUrl = 'wss://test.mosquitto.org:8081'; // Assurez-vous que c'est le bon URL pour votre broker
+        const client = mqtt.connect(brokerUrl);
+
+        client.on('connect', () => {
+            console.log('Connected to MQTT broker');
+            client.subscribe('device/current_phase', (err) => {
+                if (err) {
+                    console.error('Subscription error:', err);
+                } else {
+                    console.log('Subscribed to device/current_phase');
+                }
+            });
+        });
+
+        client.on('message', (topic, message) => {
+            if (topic === 'device/current_phase') {
+                document.getElementById('currentPhase').innerText = message.toString();
+            }
+        });
+
+        client.on('error', (err) => {
+            console.error('Connection error:', err);
+            alert('Failed to connect to the MQTT broker.');
+        });
+
+        function sendCommand(phase) {
+            console.log('Sending command:', phase);
+            client.publish('device/phase_control', phase, (err) => {
+                if (err) {
+                    console.error('Publish error:', err);
+                } else {
+                    console.log('Command sent:', phase);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
